@@ -3,6 +3,6 @@
 
 #include <termios.h>
 
-void encapsule_cmd(struct termios term, const char* cmd);
+void encapsule_cmd(struct termios term, char** cmd);
 
 #endif

@@ -11,12 +11,14 @@ int main(int argc, char* argv[]) {
     set_nonblockig_input(STDIN_FILENO, &flags);
     unset_buffering(stdout);
 
-    char* cmd;
-    if (argc == 2)
-        cmd = argv[1];
+    char* cmd[] = {
+        getenv("SHELL"),
+        NULL,
+    };
+    if (argc > 1)
+        encapsule_cmd(term, argv + 1);
     else
-        cmd = getenv("SHELL");
-    encapsule_cmd(term, cmd);
+        encapsule_cmd(term, cmd);
 
     set_buffering(stdout);
     set_normal_input(STDIN_FILENO, flags);

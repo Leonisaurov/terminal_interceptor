@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void encapsule_cmd(struct termios term, const char* cmd) {
+void encapsule_cmd(struct termios term, char** cmd) {
     struct winsize win;
     ioctl(STDIN_FILENO, TIOCGWINSZ, &win);
 
@@ -46,8 +46,8 @@ void encapsule_cmd(struct termios term, const char* cmd) {
         close(master_fd);
         close(slave_fd);
 
-        execlp(cmd, (char*) NULL);
-        perror("execlp");
+        execvp(*cmd, cmd);
+        perror("execvp");
         exit(EXIT_FAILURE);
         return;
     }
