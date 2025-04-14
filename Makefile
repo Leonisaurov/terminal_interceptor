@@ -1,4 +1,4 @@
-BIN ?= keypressed
+BIN ?= terminal_interceptor
 DEV ?= FALSE
 ifeq (${DEV}, TRUE)
 	BUILD_CMD = ${CC} *.c -o ${BIN} -fsanitize=address -Wall
