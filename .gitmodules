@@ -1,0 +1,3 @@
+[submodule "libs/BSL"]
+	path = libs/BSL
+	url = https://github.com/Leonisaurov/BSL.git
