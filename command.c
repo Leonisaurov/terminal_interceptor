@@ -82,12 +82,13 @@ void encapsule_cmd(struct termios term, char** cmd) {
 
     int ret;
     do {
+        ret = poll(fd, 2, timeout);
+        if (ret == -1) break;
+
         if (!esc_code && !mark_mode && !escape_mode) {
             print_overlay();
         }
 
-        ret = poll(fd, 2, timeout);
-        if (ret == -1) break;
         if (ret == 0) continue;
 
         if (fd[0].revents & POLLIN) {
@@ -95,12 +96,13 @@ void encapsule_cmd(struct termios term, char** cmd) {
             if (n < 1) continue; 
             buffer[n] = '\0';
 
-            char *c = buffer;
-            while (*c != '\0') {
-                switch (*c) {
+            char c;
+            int i = 0;
+            while ((c = buffer[i]) != '\0') {
+                switch (c) {
                     case 27:
                         esc_code = true;
-                        c++;
+                        i++;
                         continue;
                     case '[': {
                                   if (!esc_code) break;
@@ -115,7 +117,7 @@ void encapsule_cmd(struct termios term, char** cmd) {
                         mark_mode = true;
                         esc_code = false;
                         slice_arg = 0;
-                        c++;
+                        i++;
                         continue;
                     case '}':
                         if (!esc_code) break;
@@ -124,47 +126,47 @@ void encapsule_cmd(struct termios term, char** cmd) {
                         index_mark = -1;
                         break;
                     default:
-                        if (index_mark == -1 && mark_mode && ((*c >= '0' && *c <= '9') || *c == ';')) {
+                        if (index_mark == -1 && mark_mode && ((c >= '0' && c <= '9') || c == ';')) {
                             if (x_arg == -1) {
-                                if (*c == ';') {
+                                if (c == ';') {
                                     x_arg = 0;
-                                    c++;
+                                    i++;
                                     continue;
                                 }
                                 slice_arg *= 10;
-                                slice_arg += *c - '0';
-                                c++;
+                                slice_arg += c - '0';
+                                i++;
                                 continue;
                             } else if(y_arg == -1) {
-                                if (*c == ';') {
+                                if (c == ';') {
                                     y_arg = 0;
-                                    c++;
+                                    i++;
                                     continue;
                                 }
                                 x_arg *= 10;
-                                x_arg += *c - '0';
-                                c++;
+                                x_arg += c - '0';
+                                i++;
                                 continue;
                             } else {
-                                if (*c == ';') {
+                                if (c == ';') {
                                     index_mark = add_mark(x_arg, y_arg, slice_arg);
                                     slice_arg   = -1;
                                     x_arg       = -1;
                                     y_arg       = -1;
-                                    c++;
+                                    i++;
                                     continue;
                                 }
                                 y_arg *= 10;
-                                y_arg += *c - '0';
-                                c++;
+                                y_arg += c - '0';
+                                i++;
                                 continue;
                            }
                         }
                         if (index_mark != -1) {
-                            mark_stream_char(index_mark, *c);
+                            mark_stream_char(index_mark, c);
                             break;
                         }
-                        if (escape_mode && *c >= 0x40 && *c <= 0x7E)
+                        if (escape_mode && c >= 0x40 && c <= 0x7E)
                             escape_mode = false;
                         if (esc_code) {
                             char c = 27;
@@ -173,10 +175,15 @@ void encapsule_cmd(struct termios term, char** cmd) {
                         }
                         break;
                 }
-                if (mark_mode) {
-                } else
-                    write(STDOUT_FILENO, c, 1);
-                c++;
+                if (!mark_mode)
+                    write(STDOUT_FILENO, &c, 1);
+                i++;
+            }
+
+            if (esc_code && n != 255) {
+                char c = 27;
+                write(STDOUT_FILENO, &c, 1);
+                esc_code = false;
             }
         }
 
