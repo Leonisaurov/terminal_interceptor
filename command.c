@@ -104,14 +104,14 @@ void encapsule_cmd(struct termios term, char** cmd) {
                     case '[':
                         escape_mode = true;
                         break;
-                    case '(':
+                    case '{':
                         if (!esc_code) break;
                         mark_mode = true;
                         esc_code = false;
                         slice_arg = 0;
                         c++;
                         continue;
-                    case ')':
+                    case '}':
                         if (!esc_code) break;
                         mark_mode = false;
                         esc_code = false;
