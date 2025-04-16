@@ -82,12 +82,12 @@ void encapsule_cmd(struct termios term, char** cmd) {
 
     int ret;
     do {
-        ret = poll(fd, 2, timeout);
-        if (ret == -1) break;
-
         if (!esc_code && !mark_mode && !escape_mode) {
             print_overlay();
         }
+
+        ret = poll(fd, 2, timeout);
+        if (ret == -1) break;
 
         if (ret == 0) continue;
 
