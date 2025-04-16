@@ -100,10 +100,16 @@ void encapsule_cmd(struct termios term, char** cmd) {
                 switch (*c) {
                     case 27:
                         esc_code = true;
-                        break;
-                    case '[':
-                        escape_mode = true;
-                        break;
+                        c++;
+                        continue;
+                    case '[': {
+                                  if (!esc_code) break;
+                                  escape_mode = true;
+                                  esc_code = false;
+                                  char c = 27;
+                                  write(STDOUT_FILENO, &c, 1);
+                                  break;
+                              }
                     case '{':
                         if (!esc_code) break;
                         mark_mode = true;
@@ -160,7 +166,11 @@ void encapsule_cmd(struct termios term, char** cmd) {
                         }
                         if (escape_mode && *c >= 0x40 && *c <= 0x7E)
                             escape_mode = false;
-                        esc_code = false;
+                        if (esc_code) {
+                            char c = 27;
+                            write(STDOUT_FILENO, &c, 1);
+                            esc_code = false;
+                        }
                         break;
                 }
                 if (mark_mode) {
