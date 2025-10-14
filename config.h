@@ -1,0 +1,7 @@
+#ifndef TERMINAL_INTERCEP_CONFIG
+#define TERMINAL_INTERCEP_CONFIG
+
+#define STDOUT_BFSIZE   255
+#define STDIN_BFSIZE    255
+
+#endif

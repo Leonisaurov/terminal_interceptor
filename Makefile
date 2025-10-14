@@ -1,13 +1,23 @@
-BIN ?= terminal_interceptor
-DEV ?= FALSE
-ifeq (${DEV}, TRUE)
-	BUILD_CMD = ${CC} *.c -o ${BIN} -fsanitize=address -Wall
-else
-	BUILD_CMD = ${CC} *.c -o ${BIN}
+DEV		?= FALSE
+ARGS	?=
+CFLAGS	?= -fPIC
+ifneq (${DEV}, FALSE)
+	ifeq (${DEV},GDB)
+		CFLAGS += -g
+	endif
+	CFLAGS += -Wall -Ddebug
 endif
 
-compile: *.c
-	${BUILD_CMD}
+SRCS	=$(wildcard *.c)
+OBJS	=$(SRCS:.c=.o)
 
-run: compile
-	./${BIN}
+%.o: %.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+run-test: 
+	$(MAKE) -C test run $(ARGS) DEV=$(DEV)
+
+build-lib: $(OBJS)
+
+clean:
+	rm -rfv $(OBJS)

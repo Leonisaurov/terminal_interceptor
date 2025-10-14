@@ -10,13 +10,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void encapsule_cmd(struct termios term, char** cmd) {
+#include "config.h"
+
+void encapsule_cmd(Cmd *cmd) {
     struct winsize win;
     ioctl(STDIN_FILENO, TIOCGWINSZ, &win);
 
     int master_fd, slave_fd;
 
-    struct termios slave_t = term;
+    struct termios slave_t = cmd->term_snap;
     if (openpty(&master_fd, &slave_fd, NULL, &slave_t, &win) == -1) {
         perror("openpty");
         exit(EXIT_FAILURE);
@@ -46,23 +48,28 @@ void encapsule_cmd(struct termios term, char** cmd) {
         close(master_fd);
         close(slave_fd);
 
-        execvp(*cmd, cmd);
+        execvp(*cmd->command, (char**)cmd->command);
         perror("execvp");
         exit(EXIT_FAILURE);
         return;
     }
 
     close(slave_fd);
+    cmd->stdin_fd = master_fd;
 
-    char buffer[256];
+    char buffer[(STDIN_BFSIZE > STDOUT_BFSIZE?STDIN_BFSIZE:STDOUT_BFSIZE) + 1];
     int timeout = 10000;
-    struct pollfd fd[2];
+    struct pollfd fd[2] = {0};
 
-    fd[0].fd = master_fd;
-    fd[0].events = POLLIN;
+    if (cmd->processStdout != TI_DONT_LISTEN) {
+        fd[0].fd = master_fd;
+        fd[0].events = POLLIN;
+    }
 
-    fd[1].fd = STDIN_FILENO;
-    fd[1].events = POLLIN;
+    if (cmd->processStdin != TI_DONT_LISTEN) {
+        fd[1].fd = STDIN_FILENO;
+        fd[1].events = POLLIN;
+    }
 
     int status;
     do {
@@ -70,22 +77,44 @@ void encapsule_cmd(struct termios term, char** cmd) {
         if (ret == -1) break;
         if (ret == 0) continue;
 
+        if (cmd->onRun != NULL)
+            cmd->onRun(cmd);
+
         if (fd[0].revents & POLLIN) {
-            int n = read(master_fd, buffer, 255);
+            int n = read(master_fd, buffer, STDOUT_BFSIZE);
             if (n < 1) continue; 
             buffer[n] = '\0';
 
-            write(STDOUT_FILENO, buffer, n);
+            if(cmd->processStdout == TI_DONT_INTERCEPT) {
+                write(STDOUT_FILENO, buffer, n);
+            } else {
+                int ret = cmd->processStdout(cmd, buffer, n);
+                switch (ret) {
+                    case 0: break;
+                    case 1: write(STDOUT_FILENO, buffer, n); break;
+                    // TODO: ERROR
+                    default: break;
+                }
+            }
         }
 
         if (fd[1].revents & POLLIN) {
-            int n = read(STDIN_FILENO, buffer, 255);
+            int n = read(STDIN_FILENO, buffer, STDIN_BFSIZE);
             if (n < 1) continue;
-            write(master_fd, buffer, n);
+
+            if(cmd->processStdin == TI_DONT_INTERCEPT) {
+                write(master_fd, buffer, n);
+            } else {
+                int ret = cmd->processStdin(cmd, buffer, n);
+                switch (ret) {
+                    case 0: break;
+                    case 1: write(master_fd, buffer, n); break;
+                    // TODO: ERROR
+                    default: break;
+                }
+            }
         }
     } while((waitpid(pid, &status, WNOHANG)) == 0);
 
     close(master_fd);
 }
-
-

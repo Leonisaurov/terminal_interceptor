@@ -1,1 +1,3 @@
 terminal_interceptor
+*.o
+log.txt
