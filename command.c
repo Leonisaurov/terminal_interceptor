@@ -101,6 +101,7 @@ void encapsule_cmd(Cmd *cmd) {
         if (fd[1].revents & POLLIN) {
             int n = read(STDIN_FILENO, buffer, STDIN_BFSIZE);
             if (n < 1) continue;
+            buffer[n] = '\0';
 
             if(cmd->processStdin == TI_DONT_INTERCEPT) {
                 write(master_fd, buffer, n);
