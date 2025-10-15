@@ -21,6 +21,8 @@ build-lib:
 $(BIN): $(OBJS) build-lib
 	$(CC) -o $@ $(OBJS) ../*.o $(CFLAGS)
 
+build: $(BIN)
+
 run: $(BIN)
 	@echo "Running"
 	./$(BIN) $(ARGS)
