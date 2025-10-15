@@ -9,20 +9,20 @@
 const char* outSequence = "wasap";
 const int outSequenceLen = 5;
 int outSequenceConsume = 0;
-int pout(Cmd *cmd, const char* stdout, const int length) {
+int pout(Cmd *self, const char* stdout, const int length) {
     for (int i = 0; i < length; i++) {
         if (stdout[i] == outSequence[outSequenceConsume]) {
             outSequenceConsume++;
             if (outSequenceConsume == outSequenceLen) {
-                write(STDOUT_FILENO, "What's up?", 10);
+                SEND_Output("What's up?");
                 outSequenceConsume = 0;
             }
         } else {
             for (int i = 0; i < outSequenceConsume; i++) {
-                write(STDOUT_FILENO, outSequence + i, 1);
+                SEND_char_Out(outSequence[i]);
             }
             outSequenceConsume = 0;
-            write(STDOUT_FILENO, stdout + i, 1);
+            SEND_char_Out(stdout[i]);
         }
     }
     return 0;
@@ -31,13 +31,13 @@ int pout(Cmd *cmd, const char* stdout, const int length) {
 const char* inSequence = "Time: ";
 const int inSequenceLen = 6;
 int inSequenceConsume = 0;
-int pin(Cmd *cmd, const char* stdin, const int length) {
+int pin(Cmd *self, const char* stdin, const int length) {
     for (int i = 0; i < length; i++) {
-        write(cmd->stdin_fd, stdin + i, 1);
+        SEND_char_In(stdin[i]);
         if (stdin[i] == inSequence[inSequenceConsume]) {
             inSequenceConsume++;
             if (inSequenceConsume == inSequenceLen) {
-                write(cmd->stdin_fd, "17:08", 5);
+                SEND_Input("17:08");
                 inSequenceConsume = 0;
             }
         } else {

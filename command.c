@@ -55,7 +55,7 @@ void encapsule_cmd(Cmd *cmd) {
     }
 
     close(slave_fd);
-    cmd->stdin_fd = master_fd;
+    cmd->stdin = master_fd;
 
     char buffer[(STDIN_BFSIZE > STDOUT_BFSIZE?STDIN_BFSIZE:STDOUT_BFSIZE) + 1];
     int timeout = 10000;
