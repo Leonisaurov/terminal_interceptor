@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Building/Testing
 
 on:
   push:
@@ -13,5 +13,5 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: make
-      run: make
+    - name: Testing
+      run: ./lib/bashunit
