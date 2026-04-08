@@ -14,15 +14,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: "Enter Test Proyect"
-        run: "cd test"
-
+        
       - name: "Install bashunit"
         run: |
+          cd test
           curl -s https://bashunit.typeddevs.com/install.sh > install.sh
           chmod +x install.sh
           ./install.sh
 
       - name: "Test"
-        run: "./lib/bashunit"
+        run: |
+          cd test
+          ./lib/bashunit
