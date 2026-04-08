@@ -1,5 +1,6 @@
 #include "command.h"
 
+#include <assert.h>
 #include <sys/ioctl.h>
 #include <pty.h>
 
@@ -10,9 +11,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "debug.h"
 #include "config.h"
+#include "terminal.h"
+
+#include <stdio.h>
 
 void encapsule_cmd(Cmd *cmd) {
+    set_raw_terminal(cmd->term_snap, STDIN_FILENO);
+    int flags;
+    set_nonblockig_input(STDIN_FILENO, &flags);
+    unset_buffering(stdout);
+
     struct winsize win;
     ioctl(STDIN_FILENO, TIOCGWINSZ, &win);
 
@@ -32,9 +42,9 @@ void encapsule_cmd(Cmd *cmd) {
     }
 
     if (pid == 0) {
-        dup2(slave_fd, STDOUT_FILENO);
-        dup2(slave_fd, STDIN_FILENO);
-        dup2(slave_fd, STDERR_FILENO);
+        assert(dup2(slave_fd, STDOUT_FILENO) == STDOUT_FILENO);
+        assert(dup2(slave_fd, STDIN_FILENO) == STDIN_FILENO);
+        assert(dup2(slave_fd, STDERR_FILENO) == STDERR_FILENO);
 
         if(setsid() == -1) {
             perror("setsid");
@@ -56,24 +66,28 @@ void encapsule_cmd(Cmd *cmd) {
 
     close(slave_fd);
     cmd->stdin = master_fd;
+    LOG("PID: "); LOGN(pid); NL;
 
     char buffer[(STDIN_BFSIZE > STDOUT_BFSIZE?STDIN_BFSIZE:STDOUT_BFSIZE) + 1];
     int timeout = 10000;
-    struct pollfd fd[2] = {0};
+    unsigned short fd_size = 0;
+    struct pollfd fd[2];
 
     if (cmd->processStdout != TI_DONT_LISTEN) {
         fd[0].fd = master_fd;
         fd[0].events = POLLIN;
+        fd_size = 1;
     }
 
     if (cmd->processStdin != TI_DONT_LISTEN) {
-        fd[1].fd = STDIN_FILENO;
-        fd[1].events = POLLIN;
+        fd[fd_size].fd = STDIN_FILENO;
+        fd[fd_size].events = POLLIN;
+        fd_size++;
     }
 
     int status;
     do {
-        int ret = poll(fd, 2, timeout);
+        int ret = poll(fd, fd_size, timeout);
         if (ret == -1) break;
         if (ret == 0) continue;
 
@@ -118,4 +132,7 @@ void encapsule_cmd(Cmd *cmd) {
     } while((waitpid(pid, &status, WNOHANG)) == 0);
 
     close(master_fd);
+    set_buffering(stdout);
+    set_normal_input(STDIN_FILENO, flags);
+    set_normal_terminal(&cmd->term_snap, STDIN_FILENO);
 }

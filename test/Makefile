@@ -16,7 +16,7 @@ OBJS	=$(SRCS:.c=.o)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 build-lib:
-	$(MAKE) -C .. build-lib
+	$(MAKE) -C .. build-lib DEV=$(DEV)
 
 $(BIN): $(OBJS) build-lib
 	$(CC) -o $@ $(OBJS) ../*.o $(CFLAGS)
@@ -30,4 +30,4 @@ run: $(BIN)
 
 clean:
 	$(MAKE) -C .. clean
-	rm -rfv $(BIN) log.txt
+	rm -rfv $(BIN) log.txt *.o

@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <termios.h>
 
-struct termios set_raw_terminal(int fd);
+struct termios get_terminal(int fd);
+void set_raw_terminal(struct termios original_t, int fd);
 int set_normal_terminal(struct termios *original_t, int fd);
 
 int set_nonblockig_input(int fd, int *flags);

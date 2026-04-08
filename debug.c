@@ -16,9 +16,33 @@ void init() {
     atexit(closeLog);
 }
 
-void LOGr(const char* txt, unsigned int n) {
+void LOGrr(const char* txt, unsigned int n) {
     init();
     write(logFile, txt, n);
+}
+
+void LOGc(char ch) {
+    switch (ch) {
+        case 27: LOGrr(STR("<ESC>")); return;
+        case 13: case 10: LOGrr(STR("\\n")); return;
+        case 7: LOGrr(STR("<BELL>")); return;
+        default:
+            if (ch < 30) {
+                LOGrr(STR("<"));
+                LOGN(ch);
+                LOGrr(STR(">"));
+                return;
+            }
+    }
+    LOGrr(&ch, 1);
+}
+
+#define STR(txt) txt, strlen(txt)
+
+void LOGr(const char* txt, unsigned int n) {
+    for (unsigned int i = 0; i < n; i++) {
+        LOGc(txt[i]);
+    }
 }
 
 void LOG(const char* txt) {
@@ -71,3 +95,14 @@ void LOGhashmap(struct hashmap_s *hashmap, void (*logFunction)(void* const key, 
 void TODO() {
     LOG("Not handled yet!"); exit(-1);
 }
+
+#ifdef KEYEXPAND_ESC_CODES
+void LOG_ESC(EscapeCode code) {
+    const char* code_type = get_type_repr(code.type);
+    const char* code_subtype = get_subtype_repr(code.type, code.subtype);
+    const char* code_specify = get_specify_repr(code.type, code.subtype, code.specify);
+    const char* code_metadata = get_metadata_repr(code.type, code.subtype, code.specify, code.data);
+
+    LOG("ESCAPE_CODE["); LOG(code_type); LOG("]<"); LOG(code_subtype); LOG(">: "); LOG(code_specify); LOG(" "); LOG(code_metadata);
+}
+#endif

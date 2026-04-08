@@ -15,6 +15,7 @@
 #define STR(txt) txt, strlen(txt)
 
 void LOGr(const char* txt, unsigned int n);
+void LOGc(char ch);
 void LOG(const char* txt);
 void LOGN(long long number);
 void LOGp(void* pointer);
@@ -31,4 +32,7 @@ void LOGhashmap(struct hashmap_s *hashmap, void (*logFunction)(void* key, void* 
 
 void TODO();
 
+#ifdef KEYEXPAND_ESC_CODES
+void LOG_ESC(EscapeCode code);
+#endif
 #endif

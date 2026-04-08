@@ -15,7 +15,10 @@ OBJS	=$(SRCS:.c=.o)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 run-test: 
-	$(MAKE) -C test run $(ARGS) DEV=$(DEV)
+	$(MAKE) -C test run ARGS=$(ARGS) DEV=$(DEV)
+
+build-test:
+	$(MAKE) -C test build $(ARGS) DEV=$(DEV)
 
 build-lib: $(OBJS)
 

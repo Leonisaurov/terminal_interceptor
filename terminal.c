@@ -6,16 +6,18 @@
 
 #include <unistd.h>
 
-struct termios set_raw_terminal(int fd) {
-    struct termios raw_t, original_t;
-
+struct termios get_terminal(int fd) {
+    struct termios original_t;
     tcgetattr(fd, &original_t);
+    return original_t;
+}
+
+void set_raw_terminal(struct termios original_t, int fd) {
+    struct termios raw_t;
 
     raw_t = original_t;
     raw_t.c_lflag &= ~(ICANON | ECHO | ISIG);
     tcsetattr(fd, TCSANOW, &raw_t);
-
-    return original_t;
 }
 
 int set_normal_terminal(struct termios *original_t, int fd) {
